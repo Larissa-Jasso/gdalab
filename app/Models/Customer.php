@@ -37,6 +37,6 @@ class Customer extends  Authenticatable
     }
     public function Log()
     {
-        return $this->hasMany(Log::class);
+        return $this->hasMany(Log::class,'customer_dni');
     }
 }

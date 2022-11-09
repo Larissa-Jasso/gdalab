@@ -16,7 +16,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->string('dni',45)->primary()->nullable(false);
+            $table->string('dni',45)->primary();
             $table->foreignIdFor(Region::class);
             $table->foreignIdFor(Commune::class);
             $table->string('email',120)->unique()->nullable(false);

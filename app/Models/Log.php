@@ -10,7 +10,7 @@ class Log extends Model
     use HasFactory;
     protected $table = 'logs';
     protected $fillable = [
-        'customer_id',        
+        'customer_dni',        
         'email',
         'type',
         'table',
