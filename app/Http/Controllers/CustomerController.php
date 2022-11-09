@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Commune;
 use App\Models\Customer;
 use App\Models\Log;
+use App\Models\Region;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Request as Req;
@@ -17,8 +19,7 @@ class CustomerController extends Controller
             'email' => 'required|email'
         ]);
 
-        $method = $request->method();
-        $ip = $request->getClientIp(true);;
+      
         $customer = Customer::where('email', $request->email)->first();
         if ($customer) {
             // Si se requiere extender el tiempo de vida del token modificar los minutos
@@ -27,25 +28,12 @@ class CustomerController extends Controller
             $token = $customer->createToken($request->email, ['*'], $expiresAt)->plainTextToken;
             if ($token) {
 
-                $log = Log::create([
-                    'customer_dni' => $customer->dni,
-                    'email' => $customer->email,
-                    'type' => $method,
-                    'table' => "customers",
-                    'ip' => $ip
-                ]);
+                $this->log($customer->dni,$request->email,'customers');
 
-                if ($log) {
-                    $response['token'] = $token;
-                    $response['message'] = "Token retornado correctamente";
-                    $response['success'] = true;
-                    return $response;
-                } else {
-                    $response['token'] = $token;
-                    $response['message'] = "Error al guardar el log";
-                    $response['success'] = false;
-                    return $response;
-                }
+                $response['token'] = $token;
+                $response['message'] = "Token retornado correctamente";
+                $response['success'] = true;
+                return $response;
             } else {
                 $response['message'] = "Error al obtener token";
                 $response['success'] = false;
@@ -58,16 +46,65 @@ class CustomerController extends Controller
         }
     }
 
-    public function user(Request $request)
+    public function CreateCustomer(Request $request)
     {
-
-
         try {
 
-            return $request->user();
-            //code...
+            $loc = Region::join('communes', 'communes.region_id', 'regions.id')
+                ->select(
+                    'regions.*',
+                    'communes.description as commune_desc',
+                    'communes.status as commune_st',
+                    'communes.id as commune_id'
+                )
+                ->where([
+                    ['regions.description', $request->region],
+                    ['communes.description', $request->commune],
+                    ['regions.status', 'A'],
+                    ['communes.status', 'A']
+                ])->first();
+
+            if ($loc) {
+                $customer = Customer::create([
+                    'region_id' => $loc->id,
+                    'commune_id' => $loc->commune_id,
+                    'dni' => $request->dni,
+                    'email' => $request->email,
+                    'name' => $request->name,
+                    'last_name' => $request->last_name,
+                    'address' => $request->address,
+                ]);
+
+                if ($customer) {
+                    
+                    $this->log($customer->dni,$request->email,'customers');
+
+                    $response['message'] = "Registro exitoso";
+                    $response['customer'] = $customer;
+                    $response['success'] = true;
+                    return $response;
+                }
+            } else {
+                $response['message'] = "La comuna no pertenece a la region indicada";
+                $response['success'] = false;
+                return $response;
+            }
         } catch (\Throwable $th) {
             return $th;
         }
+    }
+
+    public function log($customer,$email,$table)
+    {
+        $method = $request->method();
+        $ip = $request->getClientIp(true);
+
+        Log::create([
+            'customer_dni' => $customer,
+            'email' => $email,
+            'type' => $method,
+            'table' => $table,
+            'ip' => $ip
+        ]);
     }
 }

@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/login', [CustomerController::class, 'login']);
-Route::middleware('auth:sanctum')->group( function () {
-    Route::get('/user', [CustomerController::class, 'user']);
-
-    });
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/create_customer', [CustomerController::class, 'CreateCustomer']);
+});
