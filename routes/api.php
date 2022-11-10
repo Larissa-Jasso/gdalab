@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/login', [CustomerController::class, 'login']);
+
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/create_customer', [CustomerController::class, 'CreateCustomer']);
+    Route::post('/customer', [CustomerController::class, 'CreateCustomer']);
+    Route::get('/customer', [CustomerController::class, 'GetCustomer']);
+    Route::delete('customer', [CustomerController::class, 'DeleteCustomer']);
 });

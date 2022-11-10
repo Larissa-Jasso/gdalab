@@ -19,7 +19,7 @@ class CustomerController extends Controller
             'email' => 'required|email'
         ]);
 
-      
+
         $customer = Customer::where('email', $request->email)->first();
         if ($customer) {
             // Si se requiere extender el tiempo de vida del token modificar los minutos
@@ -28,7 +28,7 @@ class CustomerController extends Controller
             $token = $customer->createToken($request->email, ['*'], $expiresAt)->plainTextToken;
             if ($token) {
 
-                $this->log($customer->dni,$request->email,'customers');
+                $this->log($customer->dni, $request->email, 'customers');
 
                 $response['token'] = $token;
                 $response['message'] = "Token retornado correctamente";
@@ -49,6 +49,15 @@ class CustomerController extends Controller
     public function CreateCustomer(Request $request)
     {
         try {
+            $request->validate([
+                'email' => 'required|email|max:120',
+                'region' => 'required|max:90',
+                'commune' => 'required|max:90',
+                'dni' => 'required|max:45',
+                'name' => 'required|max:45',
+                'last_name' => 'required|max:45',
+                'address' => 'max:255',
+            ]);
 
             $loc = Region::join('communes', 'communes.region_id', 'regions.id')
                 ->select(
@@ -76,8 +85,8 @@ class CustomerController extends Controller
                 ]);
 
                 if ($customer) {
-                    
-                    $this->log($customer->dni,$request->email,'customers');
+
+                    $this->log($request, $customer->dni, $request->email, 'customers');
 
                     $response['message'] = "Registro exitoso";
                     $response['customer'] = $customer;
@@ -90,11 +99,52 @@ class CustomerController extends Controller
                 return $response;
             }
         } catch (\Throwable $th) {
-            return $th;
+            return $th->getMessage();
         }
     }
 
-    public function log($customer,$email,$table)
+    public function GetCustomer(Request $request)
+    {
+        $customer = auth()->user()->where('status', 'A')->with('Region', 'Commune')->first();
+
+        $this->log($request, $customer->dni, $customer->email, 'customers');
+
+        if ($customer) {
+            $response['message'] = "Informacion retornada correctamente";
+            $response['customer'] = $customer;
+            $response['success'] = true;
+            return $response;
+        } else {
+            $response['message'] = "Este usuario no esta activo";
+            $response['success'] = false;
+            return $response;
+        }
+    }
+    public function DeleteCustomer(Request $request)
+    {
+        $customer = auth()->user();
+
+        $delete = Customer::where([
+            ['dni', $customer->dni],
+            ['status', '!=', 'trash'],
+        ])->update([
+            'status' => 'trash'
+        ]);
+
+        $this->log($request, $customer->dni, $customer->email, 'customers');
+
+        if ($delete) {
+            $response['message'] = "Registro eliminado correctamente";
+            $response['success'] = true;
+            return $response;
+        } else {
+            $response['message'] = "El registro no existe";
+            $response['success'] = false;
+            return $response;
+        }
+    }
+
+    public function log($request, $customer, $email, $table)
     {
         $method = $request->method();
         $ip = $request->getClientIp(true);

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('email',120)->unique()->nullable(false);
             $table->string('name',45)->nullable(false);
             $table->string('last_name',45)->nullable(false);
-            $table->string('address',255)->nullable(false);
+            $table->string('address',255)->nullable(true);
             $table->enum('status', ['A', 'I', 'trash'])->nullable(false)->default('A');
             $table->timestamps();
         });
