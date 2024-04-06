@@ -12,23 +12,25 @@ use Request as Req;
 
 class CustomerController extends Controller
 {
+    /**
+     * Creates the login token for determinate customer
+     */
     public function login(Request $request)
     {
 
         $request->validate([
             'email' => 'required|email'
         ]);
-
-
         $customer = Customer::where('email', $request->email)->first();
+        
         if ($customer) {
-            // Si se requiere extender el tiempo de vida del token modificar los minutos
+            // If it is required to extend the lifetime of the token, modify the minutes
             $expiresAt = Carbon::now()->addMinutes(5);
 
             $token = $customer->createToken($request->email, ['*'], $expiresAt)->plainTextToken;
             if ($token) {
 
-                $this->log($customer->dni, $request->email, 'customers');
+                $this->log($request,$customer->dni, $request->email, 'customers');
 
                 $response['token'] = $token;
                 $response['message'] = "Token retornado correctamente";
@@ -46,6 +48,9 @@ class CustomerController extends Controller
         }
     }
 
+    /**
+     * Generate a new customer record
+     */
     public function CreateCustomer(Request $request)
     {
         try {
@@ -103,6 +108,9 @@ class CustomerController extends Controller
         }
     }
 
+    /**
+     * Obtain customer data
+     */
     public function GetCustomer(Request $request)
     {
         $customer = auth()->user()->where('status', 'A')->with('Region', 'Commune')->first();
@@ -120,6 +128,9 @@ class CustomerController extends Controller
             return $response;
         }
     }
+    /**
+     * Delete customer record
+     */
     public function DeleteCustomer(Request $request)
     {
         $customer = auth()->user();
@@ -144,6 +155,9 @@ class CustomerController extends Controller
         }
     }
 
+    /**
+     * Save logs
+     */
     public function log($request, $customer, $email, $table)
     {
         $method = $request->method();
